@@ -5,6 +5,7 @@ import { NavBar } from "./components/NavBar";
 import { AppShell } from "@mantine/core";
 import { useDisclosure, useSessionStorage } from "@mantine/hooks";
 import DogFilter from "./components/DogFilter";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export default function App() {
 	const [opened, { toggle }] = useDisclosure();
@@ -20,7 +21,7 @@ export default function App() {
 				withBorder={false}
 				header={{ height: "3.5rem" }}
 				navbar={{
-					width: isLoginPage ? "0" : "18rem",
+					width: isLoggedIn && !isLoginPage ? "18rem" : "0",
 					breakpoint: "sm",
 					collapsed: { desktop: opened, mobile: !opened },
 				}}
@@ -30,19 +31,22 @@ export default function App() {
 					<NavBar opened={opened} toggle={toggle} />
 				</AppShell.Header>
 
-				{isLoginPage && isLoggedIn ? (
-					<></>
-				) : (
+				{!isLoginPage && isLoggedIn && (
 					<AppShell.Navbar>
-						{window.location.pathname}
-						{isLoggedIn}
 						<DogFilter />
 					</AppShell.Navbar>
 				)}
 
-				<AppShell.Main p={isLoginPage ? "0" : ""}>
+				<AppShell.Main p={isLoggedIn && !isLoginPage ? "" : "0"}>
 					<Routes>
-						<Route path="/" element={<BrowsePage />} />
+						<Route
+							path="/"
+							element={
+								<ProtectedRoute>
+									<BrowsePage />
+								</ProtectedRoute>
+							}
+						/>
 						<Route path="/login" element={<LoginPage />} />
 					</Routes>
 				</AppShell.Main>
