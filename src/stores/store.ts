@@ -1,9 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
-import counterReducer from "../features/counter/counterSlice";
+import authReducer from "./authSlice";
+import breedReducer from "./breedSlice";
+import browseReducer from "./browseSlice";
 
 export const store = configureStore({
 	reducer: {
-		counter: counterReducer,
+		auth: authReducer,
+		breed: breedReducer,
+		browse: browseReducer,
 	},
 });
 
