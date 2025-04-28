@@ -6,15 +6,30 @@ import {
 	Box,
 	ComboboxItem,
 	Input,
+	Loader,
 	MultiSelect,
 	RangeSlider,
+	ScrollArea,
 	Select,
 	Text,
 	Title,
 } from "@mantine/core";
+import {
+	getDogsAsync,
+	searchDogsAsync,
+	isFilterOn,
+	setSearchParams,
+} from "../stores/browseSlice";
+import { DogSearchParams, DogSortValue } from "../interfaces";
+import { readSessionStorageValue, useDebouncedCallback } from "@mantine/hooks";
 
 export default function DogFilter() {
+	const isLoggedIn = readSessionStorageValue({ key: "isLoggedIn" });
+
 	const dispatch = useAppDispatch<AppDispatch>();
+	const { maxKeyCount, dogSearchParams } = useAppSelector(
+		(state: RootState) => state.browse
+	);
 
 	// setting sorting config
 	const sortOptions = [
@@ -33,63 +48,121 @@ export default function DogFilter() {
 	}, []);
 
 	// setting age config
-	const minAge = 0;
-	const maxAge = 14;
 	function getAgeMarks() {
 		const marks = [];
-		for (let i = minAge; i <= maxAge; i++) {
+		for (let i = dogSearchParams.ageMin; i <= dogSearchParams.ageMax; i++) {
 			if (!(i % 2)) marks.push({ value: i, label: `${i}` });
 		}
 		return marks;
 	}
 
 	// setting states
-	const [selectedSort, setSelectedSort] = useState<ComboboxItem>({
-		value: "breed:asc",
-		label: "Breed (A-Z)",
-	});
-	const [selectedBreeds, setSelectedBreeds] = useState<string[]>([]);
-	const [selectedZipCodes, setSelectedZipCodes] = useState<string>("");
-	const [selectedAgeRange, setSelectedAgeRange] = useState<[number, number]>([
-		minAge,
-		maxAge,
-	]);
+	const [isZipCodeLoading, setIsZipCodeLoading] = useState<boolean>(false);
 
-	return (
-		<div className="p-4 pe-0">
+	const updateSearchedDogs = async (
+		updatedParams: Partial<DogSearchParams>
+	) => {
+		const searchParams = dispatch(
+			setSearchParams({ ...dogSearchParams, ...updatedParams })
+		);
+
+		dispatch(isFilterOn());
+		console.log(dogSearchParams);
+
+		const searchedResult = await dispatch(
+			searchDogsAsync(searchParams.payload)
+		);
+
+		if (searchDogsAsync.fulfilled.match(searchedResult)) {
+			const updatedResultIds = searchedResult.payload.resultIds;
+			await dispatch(getDogsAsync(updatedResultIds));
+		}
+	};
+
+	const handleSort = async (value: ComboboxItem) => {
+		updateSearchedDogs({ sort: value.value as DogSortValue });
+	};
+
+	const handleBreeds = async (value: string[]) => {
+		updateSearchedDogs({ breeds: value });
+	};
+
+	const handleZipCodes = useDebouncedCallback(async (value: string) => {
+		setIsZipCodeLoading(true);
+		updateSearchedDogs({
+			zipCodes: value ? value.split(", ") : [],
+		});
+		setIsZipCodeLoading(false);
+	}, 1000);
+
+	const handleZipCodeChange = (
+		event: React.ChangeEvent<HTMLInputElement>
+	) => {
+		dispatch(
+			setSearchParams({
+				...dogSearchParams,
+				zipCodeString: event.currentTarget.value,
+			})
+		);
+		handleZipCodes(event.currentTarget.value);
+	};
+
+	const hangleAgeRange = useDebouncedCallback(
+		async ([ageMin, ageMax]: [number, number]) => {
+			updateSearchedDogs({ ageMin, ageMax });
+		},
+		500
+	);
+
+	const handleAgeRangeChange = (value: [number, number]) => {
+		hangleAgeRange(value);
+	};
+
+	return isLoggedIn ? (
+		<ScrollArea className="p-4 pe-2 h-screen" type="hover" scrollbars="y">
 			<Title order={4} className="text-amber-600">
 				Find dogs
 			</Title>
+
 			<Box className="grid gap-4 h-fit mt-0.5">
 				<Select
+					name="sort"
 					label="Sort by"
 					placeholder="Breed (A-Z)"
 					data={sortOptions}
-					value={selectedSort.value}
-					onChange={(_value, option) => setSelectedSort(option)}
+					value={dogSearchParams.sort}
+					onChange={(_value, option) => handleSort(option)}
 				/>
 
 				<MultiSelect
 					searchable
+					name="breeds"
 					label="Breeds"
-					description="Allow up to 100 breeds."
-					placeholder="Search or select"
+					description={`Allow up to ${maxKeyCount} breeds.`}
+					error={dogSearchParams.breeds.length === maxKeyCount}
+					placeholder={
+						dogSearchParams.breeds.length
+							? `${dogSearchParams.breeds.length} breed${
+									dogSearchParams.breeds.length > 1 ? "s" : ""
+							  } selected`
+							: "Search or select"
+					}
 					data={breeds}
-					maxValues={100}
-					value={selectedBreeds}
-					onChange={setSelectedBreeds}
+					maxValues={maxKeyCount}
+					value={dogSearchParams.breeds}
+					onChange={handleBreeds}
 				/>
 
 				<Input.Wrapper
 					label="Zip codes"
-					description="Allow up to 100 zip codes. Separate each zip code with a comma as shown."
+					description={`Allow up to ${maxKeyCount} zip codes. Separate each zip code with a comma as shown.`}
 				>
 					<Input
+						name="zip code"
 						placeholder="12345, 67890, 34567, ..."
-						value={selectedZipCodes}
-						onChange={(e) =>
-							setSelectedZipCodes(e.currentTarget.value)
-						}
+						value={dogSearchParams.zipCodeString}
+						onChange={handleZipCodeChange}
+						rightSection={isZipCodeLoading && <Loader size={20} />}
 					/>
 				</Input.Wrapper>
 
@@ -98,16 +171,19 @@ export default function DogFilter() {
 						Ages
 					</Text>
 					<RangeSlider
+						name="age range"
 						minRange={0}
-						min={minAge}
-						max={maxAge}
+						min={dogSearchParams.ageMin}
+						max={dogSearchParams.ageMax}
 						step={1}
 						marks={getAgeMarks()}
-						value={selectedAgeRange}
-						onChange={setSelectedAgeRange}
+						value={[dogSearchParams.ageMin, dogSearchParams.ageMax]}
+						onChange={handleAgeRangeChange}
 					/>
 				</Box>
 			</Box>
-		</div>
+		</ScrollArea>
+	) : (
+		<></>
 	);
 }

@@ -31,11 +31,9 @@ export default function App() {
 					<NavBar opened={opened} toggle={toggle} />
 				</AppShell.Header>
 
-				{!isLoginPage && isLoggedIn && (
-					<AppShell.Navbar>
-						<DogFilter />
-					</AppShell.Navbar>
-				)}
+				<AppShell.Navbar>
+					<DogFilter />
+				</AppShell.Navbar>
 
 				<AppShell.Main p={isLoggedIn && !isLoginPage ? "" : "0"}>
 					<Routes>

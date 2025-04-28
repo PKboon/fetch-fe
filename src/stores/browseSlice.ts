@@ -10,29 +10,34 @@ import {
 } from "../interfaces";
 
 export interface BrowseState {
+	maxKeyCount: number;
+
 	dogs: Dog[];
 	matchedDog: Match;
-	searchedResult: DogSearchResult;
+	dogSearchParams: DogSearchParams;
+	dogSearchedResult: DogSearchResult;
 	currPage: number;
 	numPerPage: number;
 	browseStatus: apiStatus;
 	isFilterOn: boolean;
 }
 
-const initialState: BrowseState = {
-	dogs: [
-		{
-			img: "https://frontend-take-home.fetch.com/dog-images/n02100583-vizsla/n02100583_5028.jpg",
-			name: "Ismael",
-			age: 10,
-			breed: "Vizsla",
-			zip_code: "74965",
-			id: "fMD-OZUBBPFf4ZNZzARe",
-		},
-	],
-	searchedResult: {
+export const dogInitialState: BrowseState = {
+	maxKeyCount: 100,
+
+	dogs: [],
+	dogSearchedResult: {
 		resultIds: [],
 		total: 0,
+	},
+	dogSearchParams: {
+		breeds: [],
+		zipCodeString: "",
+		zipCodes: [],
+		ageMin: 0,
+		ageMax: 14,
+		size: 25,
+		sort: "breed:asc",
 	},
 	matchedDog: {
 		match: "",
@@ -48,7 +53,7 @@ const initialState: BrowseState = {
 
 const browseSlice = createSlice({
 	name: "browse",
-	initialState,
+	initialState: dogInitialState,
 	reducers: {
 		setCurrPage: (state, action) => {
 			state.currPage = action.payload;
@@ -62,8 +67,16 @@ const browseSlice = createSlice({
 			);
 			if (foundDog) foundDog.favorite = !foundDog.favorite;
 		},
-		setIsFilterOn: (state, action) => {
-			state.isFilterOn = action.payload;
+		isFilterOn: (state) => {
+			state.isFilterOn = Object.keys(dogInitialState).every(
+				(key) =>
+					dogInitialState.dogSearchParams[
+						key as keyof DogSearchParams
+					] === state.dogSearchParams[key as keyof DogSearchParams]
+			);
+		},
+		setSearchParams: (state, action) => {
+			state.dogSearchParams = action.payload;
 		},
 	},
 	extraReducers: (builder) => {
@@ -77,7 +90,7 @@ const browseSlice = createSlice({
 				(state, action: PayloadAction<DogSearchResult>) => {
 					state.browseStatus.code = API_STATUS.SUCCESS;
 					state.browseStatus.message = "Completed searching dogs";
-					state.searchedResult = action.payload;
+					state.dogSearchedResult = action.payload;
 				}
 			)
 			.addCase(searchDogsAsync.rejected, (state) => {
@@ -165,6 +178,11 @@ export const getDogMatchAsync = createAsyncThunk(
 	}
 );
 
-export const { setCurrPage, setNumPerPage, toggleFavorite } =
-	browseSlice.actions;
+export const {
+	setCurrPage,
+	setNumPerPage,
+	toggleFavorite,
+	isFilterOn,
+	setSearchParams,
+} = browseSlice.actions;
 export default browseSlice.reducer;

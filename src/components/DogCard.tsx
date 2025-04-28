@@ -34,7 +34,7 @@ export const DogCard = forwardRef<HTMLDivElement, Props>(({ dog }, ref) => {
 					title="Toggle favorite"
 					onClick={handleToggleFavorite}
 				>
-					{dog.favorite ? (
+					{dog?.favorite ? (
 						<>
 							<PiHeartStraightFill
 								className={`relative z-[1] ${
@@ -49,7 +49,12 @@ export const DogCard = forwardRef<HTMLDivElement, Props>(({ dog }, ref) => {
 						</>
 					)}
 				</div>
-				<Image src={dog.img} alt={`${dog.name}`} />
+				<Image
+					src={dog.img}
+					alt={`${dog.name}`}
+					fit="contain"
+					className="h-[15rem]"
+				/>
 			</Card.Section>
 
 			<Card.Section className="px-3 py-2">

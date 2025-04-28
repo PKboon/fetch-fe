@@ -21,8 +21,6 @@ export const NavBar = forwardRef<HTMLDivElement, Props>(
 			}
 		);
 
-		const { isFilterOn } = useAppSelector((state) => state.browse);
-
 		async function handleLogout(): Promise<void> {
 			const response = await logout();
 			const data = response.data;
@@ -49,13 +47,6 @@ export const NavBar = forwardRef<HTMLDivElement, Props>(
 								size="sm"
 								color="white"
 							/>
-							<div
-								className={`absolute text-red-600 left-8 top-2 ${
-									isFilterOn && !opened ? "visible" : "hidden"
-								}`}
-							>
-								●
-							</div>
 						</>
 					)}
 					<Title order={3} className="w-fit text-white">

@@ -1,54 +1,39 @@
 import { Grid } from "@mantine/core";
-import { useAppSelector } from "../hooks/hook";
+import { useAppDispatch, useAppSelector } from "../hooks/hook";
 import { RootState } from "../stores/store";
 import { DogCard } from "../components/DogCard";
+import { getDogsAsync, searchDogsAsync } from "../stores/browseSlice";
+import { useEffect } from "react";
 
 export default function BrowsePage() {
-	const { dogs } = useAppSelector((state: RootState) => state.browse);
+	const dispatch = useAppDispatch();
+	const { dogs, dogSearchedResult, dogSearchParams, isFilterOn } =
+		useAppSelector((state: RootState) => state.browse);
 
-	const searchDogs = () => {
-		
-	}
-	// function getCityState(zipCode: string) {
-	// 	getLocations([zipCode])
-	// 		.then((response) => {
-	// 			const data = response.data as Location[];
-	// 			setDog((dogInfo) => ({
-	// 				...dogInfo,
-	// 				cityState: `${data[0].city}, ${data[0].state}`,
-	// 			}));
-	// 		})
-	// 		.catch((error) => {
-	// 			console.log(error);
-	// 		});
-	// }
+	useEffect(() => {
+		const fetchData = async () => {
+			if (dogs.length > 0) return;
 
-	// useEffect(() => {
-	// 	getCityState(dog.zip_code);
-	// 	console.log(dog);
-	// }, [dog]);
+			if (!isFilterOn) await dispatch(searchDogsAsync(dogSearchParams));
+
+			if (dogSearchedResult.resultIds.length === 0) return;
+			await dispatch(getDogsAsync(dogSearchedResult.resultIds));
+		};
+
+		fetchData();
+	}, [dispatch, dogSearchParams, dogSearchedResult.resultIds, dogs.length]);
 
 	return (
 		<>
 			<Grid className="w-full h-screen overflow-auto">
-				<Grid.Col span={{ base: 12, xs: 6, lg: 4, xl: 3 }}>
-					<DogCard dog={dogs[0]} />
-				</Grid.Col>
-				<Grid.Col span={{ base: 12, xs: 6, lg: 4, xl: 3 }}>
-					<DogCard dog={dogs[0]} />
-				</Grid.Col>
-				<Grid.Col span={{ base: 12, xs: 6, lg: 4, xl: 3 }}>
-					<DogCard dog={dogs[0]} />
-				</Grid.Col>
-				<Grid.Col span={{ base: 12, xs: 6, lg: 4, xl: 3 }}>
-					<DogCard dog={dogs[0]} />
-				</Grid.Col>
-				<Grid.Col span={{ base: 12, xs: 6, lg: 4, xl: 3 }}>
-					<DogCard dog={dogs[0]} />
-				</Grid.Col>
-				<Grid.Col span={{ base: 12, xs: 6, lg: 4, xl: 3 }}>
-					<DogCard dog={dogs[0]} />
-				</Grid.Col>
+				{dogs.map((dog) => (
+					<Grid.Col
+						key={dog.id}
+						span={{ base: 12, xs: 6, lg: 4, xl: 3 }}
+					>
+						<DogCard dog={dog} />
+					</Grid.Col>
+				))}
 			</Grid>
 		</>
 	);

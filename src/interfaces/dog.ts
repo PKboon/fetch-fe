@@ -2,16 +2,17 @@ type SortOrder = "asc" | "desc";
 
 type DogSortField = "breed" | "name" | "age";
 
-export type DogSortValue = `${DogSortField}:${SortOrder}`; 
+export type DogSortValue = `${DogSortField}:${SortOrder}`;
 
 export interface DogSearchParams {
-	breeds?: string[];
-	zipCode?: string[];
-	ageMin?: number;
-	ageMax?: number;
-	size?: number;
+	breeds: string[];
+	zipCodeString: string;
+	zipCodes: string[];
+	ageMin: number;
+	ageMax: number;
+	size: number;
 	from?: string;
-	sort?: DogSortValue;
+	sort: DogSortValue;
 }
 
 export interface DogSearchResult {
